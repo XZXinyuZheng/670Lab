@@ -1,0 +1,76 @@
+---
+title: "670 Lab Assignment"
+authors: "Xinyu Zheng - xz531, Jiawei Sun - js4880"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+knitr::opts_chunk$set(results = "hide")
+```
+
+```{r library, include=FALSE}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(janitor)
+```
+
+### Source of Data: [The World Bank: World Development Indicators](https://databank.worldbank.org/source/world-development-indicators#)
+
+```{r load and clear}
+unzip(
+  zipfile = "data/Data_Extract_From_World_Development_Indicators.zip",
+  exdir = "data"
+)
+
+data <- read_csv("data/edf55caa-8e97-4475-be4e-0fb1319b4e68_Data.csv") %>%
+  clean_names() %>%
+  rename(c("2015" = "x2015_yr2015", "2016" = "x2016_yr2016", "2017" = "x2017_yr2017","2018" = "x2018_yr2018", "2019" = "x2019_yr2019")) %>%
+  select(-"series_code") %>%
+  filter(!is.na(country_code)) %>%
+  pivot_longer(
+    cols = c(4:8),
+    names_to = "year",
+    values_to = "values"
+  ) %>%
+  pivot_wider(
+    names_from = "series_name", 
+    values_from = "values"
+  ) %>%
+  clean_names() %>%
+  mutate_at(
+    c(4:70), as.numeric
+  )
+# all missing values are converted into NA.
+
+```
+
+## Visualization 1
+```{r visualization 1}
+
+
+```
+
+## Visualization 2
+```{r visualization 2}
+
+
+```
+
+## Visualization 3
+```{r visualization 3}
+
+
+```
+
+## Visualization 4
+```{r visualization 4}
+
+
+```
+
