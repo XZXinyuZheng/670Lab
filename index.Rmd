@@ -44,15 +44,56 @@ data <- read_csv("data/edf55caa-8e97-4475-be4e-0fb1319b4e68_Data.csv") %>%
   ) %>%
   clean_names() %>%
   mutate_at(
-    c(4:70), as.numeric
+    c(4:72), as.numeric
   )
 # all missing values are converted into NA.
 
 ```
 
-## Visualization 1
+## The components of the GHG emission
 ```{r visualization 1}
-
+data %>%
+  filter(
+    !is.na(total_greenhouse_gas_emissions_kt_of_co2_equivalent) &
+       !is.na(co2_emissions_kt) &
+       !is.na(methane_emissions_kt_of_co2_equivalent) &
+       !is.na(nitrous_oxide_emissions_thousand_metric_tons_of_co2_equivalent)
+      ) %>%
+  mutate(
+    other_CHG = total_greenhouse_gas_emissions_kt_of_co2_equivalent - co2_emissions_kt - methane_emissions_kt_of_co2_equivalent - nitrous_oxide_emissions_thousand_metric_tons_of_co2_equivalent
+  ) %>%
+  group_by(year) %>%
+  summarise(
+    sum_CO2 = sum(co2_emissions_kt),
+    sum_CH4 = sum(methane_emissions_kt_of_co2_equivalent),
+    sum_N2O = sum(nitrous_oxide_emissions_thousand_metric_tons_of_co2_equivalent),
+    sum_others = sum(other_CHG)
+  ) %>%
+  pivot_longer(
+    cols = sum_CO2:sum_others,
+    names_to = "source_of_emission",
+    values_to = "emission"
+  ) %>%
+  ggplot(aes(x = year, y = emission, fill = source_of_emission)) +
+  geom_col(position = "stack") +
+  labs(
+    x = "Year",
+    y = "The Amount of Emission (Thousand Metric Tons)",
+    title = "The Components of the CHG Emission",
+    caption = "The World Bank: [World Development Indicators](https://databank.worldbank.org/source/world-development-indicators#)",
+    fill = "The Sources of the CHG Emissions"
+  ) +
+  scale_fill_discrete(labels = c("CH4", "CO2", "N2O", "Others")) +
+  theme_minimal() +
+  theme(
+    axis.title = element_text(size = 9),
+    axis.text = element_text(size = 8),
+    plot.title = element_text(hjust = 0.5, size = 10),
+    plot.caption = element_text(hjust = 0, size =7, face = "italic"),
+    legend.title = element_text(size = 8),
+    legend.text = element_text(size = 8),
+    legend.position = "bottom"
+  )
 
 ```
 
