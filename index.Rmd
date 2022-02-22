@@ -20,7 +20,7 @@ library(readr)
 library(janitor)
 ```
 
-### Source of Data: [The World Bank: World Development Indicators](https://databank.worldbank.org/source/world-development-indicators#)
+#### Source of Data: [The World Bank: World Development Indicators](https://databank.worldbank.org/source/world-development-indicators#)
 
 ```{r load and clear}
 unzip(
@@ -50,7 +50,7 @@ data <- read_csv("data/edf55caa-8e97-4475-be4e-0fb1319b4e68_Data.csv") %>%
 
 ```
 
-## The components of the GHG emission
+### The components of the GHG emission
 ```{r visualization 1}
 data %>%
   filter(
@@ -60,14 +60,18 @@ data %>%
        !is.na(nitrous_oxide_emissions_thousand_metric_tons_of_co2_equivalent)
       ) %>%
   mutate(
-    other_CHG = total_greenhouse_gas_emissions_kt_of_co2_equivalent - co2_emissions_kt - methane_emissions_kt_of_co2_equivalent - nitrous_oxide_emissions_thousand_metric_tons_of_co2_equivalent
+    other_CHG_kt = total_greenhouse_gas_emissions_kt_of_co2_equivalent - co2_emissions_kt - methane_emissions_kt_of_co2_equivalent - nitrous_oxide_emissions_thousand_metric_tons_of_co2_equivalent,
+    co2_bt = co2_emissions_kt / 1000,
+    ch4_bt = methane_emissions_kt_of_co2_equivalent / 1000,
+    n2o_bt = nitrous_oxide_emissions_thousand_metric_tons_of_co2_equivalent / 1000,
+    other_CHG_bt = other_CHG_kt / 1000
   ) %>%
   group_by(year) %>%
   summarise(
-    sum_CO2 = sum(co2_emissions_kt),
-    sum_CH4 = sum(methane_emissions_kt_of_co2_equivalent),
-    sum_N2O = sum(nitrous_oxide_emissions_thousand_metric_tons_of_co2_equivalent),
-    sum_others = sum(other_CHG)
+    sum_CO2 = sum(co2_bt),
+    sum_CH4 = sum(ch4_bt),
+    sum_N2O = sum(n2o_bt),
+    sum_others = sum(other_CHG_bt)
   ) %>%
   pivot_longer(
     cols = sum_CO2:sum_others,
@@ -76,14 +80,14 @@ data %>%
   ) %>%
   ggplot(aes(x = year, y = emission, fill = source_of_emission)) +
   geom_col(position = "stack") +
+  scale_y_continuous(limits = c(0, 45000)) +
+  scale_fill_discrete(name = "The Sources of the CHG Emissions", labels = c("CH4", "CO2", "N2O", "Others")) +
   labs(
     x = "Year",
-    y = "The Amount of Emission (Thousand Metric Tons)",
+    y = "The Amount of Emission (Million Metric Tons)",
     title = "The Components of the CHG Emission",
-    caption = "The World Bank: [World Development Indicators](https://databank.worldbank.org/source/world-development-indicators#)",
-    fill = "The Sources of the CHG Emissions"
+    caption = "The World Bank: [World Development Indicators](https://databank.worldbank.org/source/world-development-indicators#)"
   ) +
-  scale_fill_discrete(labels = c("CH4", "CO2", "N2O", "Others")) +
   theme_minimal() +
   theme(
     axis.title = element_text(size = 9),
@@ -97,10 +101,38 @@ data %>%
 
 ```
 
-## Visualization 2
+### Energy Efficiency
 ```{r visualization 2}
-
-
+data %>%
+  filter(
+    year == "2015" &
+      !is.na(gdp_per_capita_current_us) &
+      !is.na(gdp_per_unit_of_energy_use_ppp_per_kg_of_oil_equivalent) &
+      !is.na(energy_use_kg_of_oil_equivalent_per_capita)
+  ) %>%
+  ggplot() +
+  geom_point(aes(x = gdp_per_unit_of_energy_use_ppp_per_kg_of_oil_equivalent, y = energy_use_kg_of_oil_equivalent_per_capita, color = country_name, size = gdp_per_capita_current_us), alpha = 0.5) +
+  geom_smooth(aes(x = gdp_per_unit_of_energy_use_ppp_per_kg_of_oil_equivalent, y = energy_use_kg_of_oil_equivalent_per_capita), se = FALSE, color = "#00AFBB") +
+  theme_minimal() +
+  scale_color_discrete(name = "Country") +
+  scale_size_continuous(name = "GDP Per Capital ($)") +
+  labs(
+   x = "GDP Per Unit of Energy Use (PPP $ Per Kg of Oil Equivalent)",
+   y = "Energy Use (Kg of Oil Equivalent Per Capita)",
+   title = "Energy Efficiency",
+   caption = "The World Bank: [World Development Indicators](https://databank.worldbank.org/source/world-development-indicators#)"
+  ) +
+  theme(
+    axis.title = element_text(size = 9),
+    axis.text = element_text(size = 8),
+    plot.title = element_text(hjust = 0.5, size = 10),
+    plot.caption = element_text(hjust = 0, size =7, face = "italic"),
+    legend.title = element_text(size = 8),
+    legend.text = element_text(size = 8),
+    legend.position = "bottom"
+  ) +
+   guides(size = guide_legend(nrow = 3))
+ 
 ```
 
 ## Visualization 3
