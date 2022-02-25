@@ -254,3 +254,4 @@ data %>%
 
 ##### Stretch Excercise
 ![change from https to ssh](ssh.PNG)
+![change from https to ssh-selina](ssh-selina.png)
