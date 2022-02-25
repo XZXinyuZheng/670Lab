@@ -24,13 +24,13 @@ library(janitor)
 
 ```{r load and clear}
 unzip(
-  zipfile = "data/Data_Extract_From_World_Development_Indicators.zip",
+  zipfile = "data/Data_Extract_From_World_Development_Indicators2.zip",
   exdir = "data"
 )
 
-data <- read_csv("data/edf55caa-8e97-4475-be4e-0fb1319b4e68_Data.csv") %>%
+data <- read_csv("data/2ec6e98c-8ba1-49c1-a2b0-6fa5c6d718e5_Data.csv") %>%
   clean_names() %>%
-  rename(c("2015" = "x2015_yr2015", "2016" = "x2016_yr2016", "2017" = "x2017_yr2017","2018" = "x2018_yr2018", "2019" = "x2019_yr2019")) %>%
+  rename(c("2011" = "x2011_yr2011", "2012" = "x2012_yr2012", "2013" = "x2013_yr2013","2014" = "x2014_yr2014", "2015" = "x2015_yr2015")) %>%
   select(-"series_code") %>%
   filter(!is.na(country_code)) %>%
   pivot_longer(
@@ -44,48 +44,54 @@ data <- read_csv("data/edf55caa-8e97-4475-be4e-0fb1319b4e68_Data.csv") %>%
   ) %>%
   clean_names() %>%
   mutate_at(
-    c(4:72), as.numeric
+    c(4:75), as.numeric
   )
+
 # all missing values are converted into NA.
 
 ```
 
-### The components of the GHG emission
+### The Sources of the CO2 Emissions
 ```{r visualization 1}
+
 data %>%
   filter(
-    !is.na(total_greenhouse_gas_emissions_kt_of_co2_equivalent) &
-       !is.na(co2_emissions_kt) &
-       !is.na(methane_emissions_kt_of_co2_equivalent) &
-       !is.na(nitrous_oxide_emissions_thousand_metric_tons_of_co2_equivalent)
+      !is.na(co2_emissions_kt) &
+        !is.na(co2_emissions_from_gaseous_fuel_consumption_kt) &
+        !is.na(co2_emissions_from_liquid_fuel_consumption_kt) &
+        !is.na(co2_emissions_from_solid_fuel_consumption_kt)
       ) %>%
   mutate(
-    other_CHG_kt = total_greenhouse_gas_emissions_kt_of_co2_equivalent - co2_emissions_kt - methane_emissions_kt_of_co2_equivalent - nitrous_oxide_emissions_thousand_metric_tons_of_co2_equivalent,
-    co2_bt = co2_emissions_kt / 1000,
-    ch4_bt = methane_emissions_kt_of_co2_equivalent / 1000,
-    n2o_bt = nitrous_oxide_emissions_thousand_metric_tons_of_co2_equivalent / 1000,
-    other_CHG_bt = other_CHG_kt / 1000
+    other_kt = co2_emissions_kt - co2_emissions_from_gaseous_fuel_consumption_kt - co2_emissions_from_liquid_fuel_consumption_kt - co2_emissions_from_solid_fuel_consumption_kt,
+    co2_gas_mt = co2_emissions_from_gaseous_fuel_consumption_kt / 1000,
+    co2_liquid_mt = co2_emissions_from_liquid_fuel_consumption_kt / 1000,
+    co2_solid_mt = co2_emissions_from_solid_fuel_consumption_kt / 1000,
+    other_mt = other_kt / 1000
   ) %>%
   group_by(year) %>%
   summarise(
-    sum_CO2 = sum(co2_bt),
-    sum_CH4 = sum(ch4_bt),
-    sum_N2O = sum(n2o_bt),
-    sum_others = sum(other_CHG_bt)
+    sum_co2_solid =sum(co2_solid_mt),
+    sum_co2_liquid = sum(co2_liquid_mt),
+    sum_co2_gas = sum(co2_gas_mt),
+    sum_co2_other = sum(other_mt)
   ) %>%
   pivot_longer(
-    cols = sum_CO2:sum_others,
-    names_to = "source_of_emission",
+    cols = c(2:5),
+    names_to = "source",
     values_to = "emission"
   ) %>%
-  ggplot(aes(x = year, y = emission, fill = source_of_emission)) +
-  geom_col(position = "stack") +
-  scale_y_continuous(limits = c(0, 45000)) +
-  scale_fill_discrete(name = "The Sources of the CHG Emissions", labels = c("CH4", "CO2", "N2O", "Others")) +
+  mutate_at(
+    c(1), as.numeric
+  ) %>%
+  ggplot(aes(x = year, y = emission, fill = source)) +
+  geom_col() +
+  scale_y_continuous(limits = c(0, 50000)) +
+  scale_fill_discrete(name = "The Sources of the CO2 Emissions", labels = c("Gaseous fuel (Mainly Natural Gas)", "Liquid fuel (Mainly Petroleum-derived Fuels)", "Others", "Solid fuel (Mainly Coals)")) +
   labs(
     x = "Year",
-    y = "The Amount of Emission (Million Metric Tons)",
-    title = "The Components of the CHG Emission",
+    y = "CO2 Emission in Energy Use (Million Metric Tons)",
+    title = "CO2 Emission in Energy Use",
+    subtitle = "by Different Types of Fuel Consumptions",
     caption = "The World Bank: [World Development Indicators](https://databank.worldbank.org/source/world-development-indicators#)"
   ) +
   theme_minimal() +
@@ -93,55 +99,69 @@ data %>%
     axis.title = element_text(size = 9),
     axis.text = element_text(size = 8),
     plot.title = element_text(hjust = 0.5, size = 10),
+    plot.subtitle = element_text(hjust = 0.5, size = 9),
     plot.caption = element_text(hjust = 0, size =7, face = "italic"),
     legend.title = element_text(size = 8),
     legend.text = element_text(size = 8),
     legend.position = "bottom"
-  )
+  ) +
+  guides(fill = guide_legend(nrow = 2))
 
 ```
+Energy use is the major contributor of CO2, whose rising associates with climate change and is threatening the sustainability of the world. By looking into the components of CO2 emission related to energy use, as shown in the graph above, it is found that burning coals and petroleum-derived fuels accounted for large share of CO2 emission from 2011 to 2015. Natural gas produced only about half of CO2 produced by coals over the 5 years. Such pattern had not been changed significantly from 2011 to 2015. There are two possible interpretation for this: 1. Economy still heavily rely on the consumption of coals and petroleum-derived fuels and natural gas is limited used. 2. coals and petroleum-derived fuels are highly carbon-intensive while natural gas is relatively clear. Based on external data beyond this data  set, the two explanations are justified.
 
-### Energy Efficiency
+### The Energy Use Across Countries
 ```{r visualization 2}
 data %>%
   filter(
+      !is.na(energy_use_kg_of_oil_equivalent_per_capita)
+      ) %>%
+  ggplot(aes(x = country_name, y = energy_use_kg_of_oil_equivalent_per_capita)) +
+  geom_boxplot()
+ 
+```
+Given the 
+
+
+### Energy Efficiency and Energy Use
+```{r visualization 3}
+data %>%
+  filter(
     year == "2015" &
-      !is.na(gdp_per_capita_current_us) &
-      !is.na(gdp_per_unit_of_energy_use_ppp_per_kg_of_oil_equivalent) &
+      !is.na(gdp_per_capita_ppp_constant_2017_international) &
+      !is.na(gdp_per_unit_of_energy_use_constant_2017_ppp_per_kg_of_oil_equivalent) &
       !is.na(energy_use_kg_of_oil_equivalent_per_capita)
   ) %>%
   ggplot() +
-  geom_point(aes(x = gdp_per_unit_of_energy_use_ppp_per_kg_of_oil_equivalent, y = energy_use_kg_of_oil_equivalent_per_capita, color = country_name, size = gdp_per_capita_current_us), alpha = 0.5) +
-  geom_smooth(aes(x = gdp_per_unit_of_energy_use_ppp_per_kg_of_oil_equivalent, y = energy_use_kg_of_oil_equivalent_per_capita), se = FALSE, color = "#00AFBB") +
+  geom_point(aes(x = gdp_per_unit_of_energy_use_constant_2017_ppp_per_kg_of_oil_equivalent, y = energy_use_kg_of_oil_equivalent_per_capita, color = country_name, size = gdp_per_capita_ppp_constant_2017_international), alpha = 0.5) +
+  geom_smooth(aes(x = gdp_per_unit_of_energy_use_constant_2017_ppp_per_kg_of_oil_equivalent, y = energy_use_kg_of_oil_equivalent_per_capita), se = FALSE, color = "#00AFBB") +
   theme_minimal() +
   scale_color_discrete(name = "Country") +
   scale_size_continuous(name = "GDP Per Capital ($)") +
   labs(
-   x = "GDP Per Unit of Energy Use (PPP $ Per Kg of Oil Equivalent)",
+   x = "GDP Per Unit of Energy Use (Constant 2017 PPP Per Kg of Oil Equivalent)",
    y = "Energy Use (Kg of Oil Equivalent Per Capita)",
-   title = "Energy Efficiency",
+   title = "Energy Efficiency and Energy Use",
+   subtitle = "Including the Size of Economy",
    caption = "The World Bank: [World Development Indicators](https://databank.worldbank.org/source/world-development-indicators#)"
   ) +
   theme(
     axis.title = element_text(size = 9),
     axis.text = element_text(size = 8),
     plot.title = element_text(hjust = 0.5, size = 10),
+    plot.subtitle = element_text(hjust = 0.5, size = 9),
     plot.caption = element_text(hjust = 0, size =7, face = "italic"),
     legend.title = element_text(size = 8),
     legend.text = element_text(size = 8),
     legend.position = "bottom"
   ) +
-   guides(size = guide_legend(nrow = 3))
- 
-```
-
-## Visualization 3
-```{r visualization 3}
-
+   guides(color = FALSE, size = guide_legend(nrow = 3))
 
 ```
+As discussed in graph (1) and (2), both developing and developed countries are sticking on carbon-intensive fossil fuels. Then, instead of talking about th transaction from traditional energy to the renewable, we focus on increasing energy efficiency. This graph above shows the negative relationship between energy efficiency, which is measured as GDP produced by one unit of energy use, and energy use per capita. However, the effect of energy efficiency on decreasing energy use is diminishing. The majority of countries in 2015 were clustering from 5 to 15 GDP per unit of energy use, but they have almost reduced their energy use by the same amount as the most energy-efficient country did. In other words, improving energy efficiency can be effective in early-stage energy use reduction, but would become invalid when the energy efficiency reaches to about 10 GDP per unit of energy use. This indicates a limitation of energy efficiency improvement on reducing energy use.
 
-## Visualization 4
+
+### The Energy Use Across Countries
 ```{r visualization 4}
 
 
