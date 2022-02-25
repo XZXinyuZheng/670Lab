@@ -19,6 +19,7 @@ library(ggplot2)
 library(readr)
 library(janitor)
 library(maps)
+library()
 ```
 
 ##### Source of Data: [The World Bank: World Development Indicators](https://databank.worldbank.org/source/world-development-indicators#)
@@ -250,3 +251,6 @@ data %>%
 ```
 
 > This figure above shows the negative relationship between energy efficiency, measured as GDP produced by one unit of energy use, and energy use per capita. However, the effect of energy efficiency on decreasing energy use is diminishing. The majority of countries in 2015 were clustering from 5 to 15 GDP per unit of energy use, but they have almost reduced their energy use by the same amount as the most energy-efficient country did. In other words, improving energy efficiency can be effective in early-stage energy use reduction. Still, it would become invalid when the energy efficiency reaches about 10 GDP per unit of energy use, indicating a limitation of energy efficiency improvement on reducing energy use. To decrease energy use, we suggest policymakers take increasing energy efficiency as a short to mid-term tool but focus on transfer to renewable in the long run. 
+
+##### Stretch Excercise
+![change from https to ssh](ssh.PNG)
